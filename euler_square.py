@@ -1,59 +1,50 @@
 import random
 from collections import deque
 
+
 class Cell():
     def __init__(self):
         self.letter = ""
         self.number = ""
-        
-    #def __init__(self, letter, number):
-    #    self.letter = letter
-    #    self.number = number
-
-    def get_letter(self):
-        return self.letter
-
-    def get_number(self):
-        return self.number
 
     def set_letter(self, letter):
         self.letter = letter
 
     def set_number(self, number):
         self.number = number
-        
-    # def __getitem__(self, index):
-        # return self[index]
+
+    def set_cell(self, letter, number):
+        self.letter = letter
+        self.number = number
 
     def __eq__(self, other):
         if self.letter == other.letter and self.number == other.number:
-            # raise ValueEqualityError
             return True
         else:
             return False
 
     def __str__(self):
-        return f"{self.get_letter()}{self.get_number()}"
-        
-# class Error(Exception):
-    # """Base class for exceptions in this module."""
-    # pass
-    
-# class ValueEqualityError(Error):
-    # """Exception raised for equal values in a grid."""
-    # pass
+        return f"{self.letter}{self.number}"
+
 
 class Grid():
     def __init__(self, n):
         self.n = n
-        self.grid = [Cell() for i in range(n*n)]
+        self.grid = [[Cell() for j in range(n)] for i in range(n)]
 
-    def print_grid(self):
+    def __str__(self):
+        output = ""
         for i in range(self.n):
             for j in range(self.n):
-                print(self.grid[self.n*i+j], end=" ")
-            print()
-    
+                output = f"{output} {self.grid[i][j]}"
+            output = f"{output}\n"
+        return output
+
+    def count(self, searchable):
+        number_of_occurrences = sum(row.count(searchable) for row in self.grid)
+        return number_of_occurrences
+
+
 class EulerSquare(Grid):
     def __init__(self, n):
         super().__init__(n)
@@ -65,9 +56,12 @@ class EulerSquare(Grid):
         print(self.numbers)
 
     def make_square(self):
-        # this function produces random squares, which are most of the time not valid,
-        # but can be validated with the is_valid function
-        # finds a valid function slower
+        '''
+        this function produces random squares,
+        which are most of the time not valid,
+        but can be validated with the is_valid function
+        finds a valid function slower
+        '''
         for i in range(self.n):
             random_letters = self.letters.copy()
             random.shuffle(random_letters)
@@ -78,7 +72,7 @@ class EulerSquare(Grid):
                 self.grid[self.n*i+j].set_letter(letter)
                 number = random_numbers.pop()
                 self.grid[self.n*i+j].set_number(number)
-                
+
     def make_odd_square_conditions(self):
         # this function works for odd numbers
         column_list_letters = [[] for i in range(self.n)]
@@ -95,7 +89,7 @@ class EulerSquare(Grid):
             while True:
                 if random_letters[0] not in column_list_letters[0]:
                     for j in range(self.n):
-                        self.grid[self.n*i+j].set_letter(random_letters[j])
+                        self.grid[i][j].set_letter(random_letters[j])
                         column_list_letters[j].append(random_letters[j])
                     break
                 else:
@@ -104,22 +98,21 @@ class EulerSquare(Grid):
                 if random_numbers[0] not in column_list_numbers[0]:
                     for j in range(self.n):
                         # try:
-                            # self.grid[self.n*i+j].set_number(random_numbers[j])
-                            # column_list_numbers[j].append(random_numbers[j])
+                        # self.grid[self.n*i+j].set_number(random_numbers[j])
+                        # column_list_numbers[j].append(random_numbers[j])
                         # except ValueEqualityError:
-                            # random_numbers.rotate(1)
-                        self.grid[self.n*i+j].set_number(random_numbers[j])
+                        # random_numbers.rotate(1)
+                        self.grid[i][j].set_number(random_numbers[j])
                         column_list_numbers[j].append(random_numbers[j])
-                    if 1 != self.grid.count(self.grid[self.n*i+j]):
+                    if 1 != self.count(self.grid[i][j]):
                         random_numbers.rotate(1)
                         for sublist in column_list_numbers:
                             del sublist[i]
-                        continue                      
+                        continue
                     break
                 else:
                     random_numbers.rotate(1)
-                        
-                
+
     def make_square_conditions(self):
         # this function works for n=3 and n=4, but doesn't work for n=5
         column_list_letters = [[] for i in range(self.n)]
@@ -173,61 +166,24 @@ class EulerSquare(Grid):
                 else:
                     break
 
-    # def __check_diagonal__(self):
-        # left_diagonal = []
-        # right_diagonal = []
-        # for i in range(self.n):
-            # left_diagonal.append(self.grid[i+i*self.n])
-            # right_diagonal.append(self.grid[(self.n*i)+(self.n-1-i)])
-        # for letter, number in left_diagonal:
-            # if 1 != left_diagonal.count(letter) or 1 != left_diagonal.count(number):
-                # return False
-        # for cell in right_diagonal:
-            # if 1 != right_diagonal.count(letter) or 1 != right_diagonal.count(number):
-                # return False
-        # return True
-        
     def is_valid(self):
-        # self.__check_diagonal__()
         for i in range(self.n):
             for x in range(1, self.n-i):
                 for j in range(self.n):
-                    if self.grid[self.n*i+j].get_letter() == self.grid[(self.n*(i+x)+j)].get_letter() or \
-                        self.grid[self.n*i+j].get_number() == self.grid[(self.n*(i+x)+j)].get_number():
+                    if self.grid[i][j] == self.grid[i+x][j]:
                         if i != self.n - 1:
                             return False
-                    if 1 != self.grid.count(self.grid[self.n*i+j]):
+                    if 1 != self.count(self.grid[i][j]):
                         return False
         return True
 
-        
-new_square = EulerSquare(23)
-# while True:
-    # new_square.make_square_conditions()
-    # if new_square.is_valid():
-        # print("found it!")
-        # new_square.print_grid()
-        # break
-        
-new_square.make_odd_square_conditions()
-if new_square.is_valid():
-    print("Found it!")
-    new_square.print_grid()
-else:
-    print("Fix code!")
-    new_square.print_grid()
 
-# new_square.make_square()        
-# new_square.print_grid()
-# print(new_square)
-        
-# new_square.grid[0].set_letter("b")
-# new_square.grid[1].set_letter("a")
-# new_square.grid[2].set_letter("c")
-# new_square.grid[3].set_letter("c")
-# new_square.grid[4].set_letter("b")
-# new_square.grid[5].set_letter("a")
-# new_square.grid[6].set_letter("a")
-# new_square.grid[7].set_letter("c")
-# new_square.grid[8].set_letter("b")
+# new_square = EulerSquare(5)
 
+# new_square.make_odd_square_conditions()
+# if new_square.is_valid():
+#     print("Found it!")
+#     print(new_square)
+# else:
+#     print("Fix code!")
+#     print(new_square)
