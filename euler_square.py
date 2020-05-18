@@ -6,16 +6,6 @@ class Cell():
     def __init__(self):
         self.letter = ""
         self.number = ""
-        
-    #def __init__(self, letter, number):
-    #    self.letter = letter
-    #    self.number = number
-
-    def get_letter(self):
-        return self.letter
-
-    def get_number(self):
-        return self.number
 
     def set_letter(self, letter):
         self.letter = letter
@@ -23,28 +13,37 @@ class Cell():
     def set_number(self, number):
         self.number = number
 
+    def set_cell(self, letter, number):
+        self.letter = letter
+        self.number = number
+
     def __eq__(self, other):
-        if self.letter == other.letter and self.number == other.number:
+        if self.letter == other.letter or self.number == other.number:
             return True
         else:
             return False
 
     def __str__(self):
-        return f"{self.get_letter()}{self.get_number()}"
+        return f"{self.letter}{self.number}"
 
 
 class Grid():
     def __init__(self, n):
         self.n = n
-        self.grid = [Cell() for i in range(n*n)]
-        # self.grid = [[Cell() for j in range(self.n)] for i in range(self.n)] 
+        self.grid = [[Cell() for j in range(n)] for i in range(n)]
 
-    def print_grid(self):
+    def __str__(self):
+        output = ""
         for i in range(self.n):
             for j in range(self.n):
-                print(self.grid[self.n*i+j], end=" ")
-            print()
-    
+                output = f"{output} {self.grid[i][j]}"
+            output = f"{output}\n"
+        return output
+
+    def count(self, searchable):
+        number_of_occurrences = sum(row.count(searchable) for row in self.grid)
+        return number_of_occurrences
+
 class EulerSquare(Grid):
     def __init__(self, n):
         super().__init__(n)
@@ -68,15 +67,22 @@ class EulerSquare(Grid):
         # finds a valid function slower
         for i in range(self.n):
             random_letters, random_numbers = self.shuffle_elements()
-            # random_letters = self.letters.copy()
-            # random.shuffle(random_letters)
-            # random_numbers = self.numbers.copy()
-            # random.shuffle(random_numbers)
             for j in range(self.n):
                 letter = random_letters.pop()
                 self.grid[self.n*i+j].set_letter(letter)
                 number = random_numbers.pop()
                 self.grid[self.n*i+j].set_number(number)
+
+    def is_valid(self):
+        for i in range(self.n):
+            for x in range(1, self.n-i):
+                for j in range(self.n):
+                    if self.grid[i][j] == self.grid[i+x][j]:
+                        if i != self.n - 1:
+                            return False
+                    if 1 != self.count(self.grid[i][j]):
+                        return False
+        return True
                 
     def generate_square(self):
         if self.n % 2 == 1:
@@ -168,13 +174,7 @@ class EulerSquare(Grid):
                 # print(self.n*(4*quad_row+i)+4*quad_col+j)
                 self.grid[self.n*(4*quad_row+i)+4*quad_col+j].set_letter(row_list_letters[i][j])
                 self.grid[self.n*(4*quad_row+i)+4*quad_col+j].set_number(row_list_numbers[i][j])
-                
-    # def row_of_quadrants(self):
-        # for i in range(0, self.n//4):
-            # batch_letters = letters[4*i : 4*i+4]
-            # batch_numbers = numbers[4*i : 4*i+4]
-            # self.four_by_four_square(i)
-        
+                     
     def eight_by_eight_square(self):   # n = 8
         letters, numbers = self.shuffle_elements()
         # batches_letters = [letters[4*i : 4*i+4] for i in range(0, self.n/4]
@@ -206,21 +206,8 @@ class EulerSquare(Grid):
         
     def multiples_of_thirty_two(self):   # n = 32, 64, ...
         pass
-        
-    def is_valid(self):
-        # self.__check_diagonal__()
-        for i in range(self.n):
-            for x in range(1, self.n-i):
-                for j in range(self.n):
-                    if self.grid[self.n*i+j].get_letter() == self.grid[(self.n*(i+x)+j)].get_letter() or \
-                        self.grid[self.n*i+j].get_number() == self.grid[(self.n*(i+x)+j)].get_number():
-                        if i != self.n - 1:
-                            return False
-                    if 1 != self.grid.count(self.grid[self.n*i+j]):
-                        return False
-        return True
 
-        
+      
 new_square = EulerSquare(8)
 
 new_square.generate_square()
@@ -240,5 +227,4 @@ else:
         # print("found it!")
         # new_square.print_grid()
         # break
-
 
