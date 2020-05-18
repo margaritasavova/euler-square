@@ -1,6 +1,6 @@
 import random
 from collections import deque
-
+import itertools
 
 class Cell():
     def __init__(self):
@@ -18,7 +18,7 @@ class Cell():
         self.number = number
 
     def __eq__(self, other):
-        if self.letter == other.letter and self.number == other.number:
+        if self.letter == other.letter or self.number == other.number:
             return True
         else:
             return False
@@ -44,7 +44,6 @@ class Grid():
         number_of_occurrences = sum(row.count(searchable) for row in self.grid)
         return number_of_occurrences
 
-
 class EulerSquare(Grid):
     def __init__(self, n):
         super().__init__(n)
@@ -54,117 +53,25 @@ class EulerSquare(Grid):
     def print_alphabets(self):
         print(self.letters)
         print(self.numbers)
+        
+    def shuffle_elements(self):
+        random_letters = self.letters.copy()
+        random.shuffle(random_letters)
+        random_numbers = self.numbers.copy()
+        random.shuffle(random_numbers)
+        return random_letters, random_numbers
 
-    def make_square(self):
-        '''
-        this function produces random squares,
-        which are most of the time not valid,
-        but can be validated with the is_valid function
-        finds a valid function slower
-        '''
+    def generate_random_square(self):
+        # this function produces random squares, which are most of the time not valid,
+        # but can be validated with the is_valid function
+        # finds a valid function slower
         for i in range(self.n):
-            random_letters = self.letters.copy()
-            random.shuffle(random_letters)
-            random_numbers = self.numbers.copy()
-            random.shuffle(random_numbers)
+            random_letters, random_numbers = self.shuffle_elements()
             for j in range(self.n):
                 letter = random_letters.pop()
                 self.grid[self.n*i+j].set_letter(letter)
                 number = random_numbers.pop()
                 self.grid[self.n*i+j].set_number(number)
-
-    def make_odd_square_conditions(self):
-        # this function works for odd numbers
-        column_list_letters = [[] for i in range(self.n)]
-        column_list_numbers = [[] for i in range(self.n)]
-        random_letters = self.letters.copy()
-        random.shuffle(random_letters)
-        random_numbers = self.numbers.copy()
-        random.shuffle(random_numbers)
-        random_letters = deque(random_letters)
-        random_numbers = deque(random_numbers)
-        for i in range(self.n):
-            random_letters.rotate(1)
-            random_numbers.rotate(1)
-            while True:
-                if random_letters[0] not in column_list_letters[0]:
-                    for j in range(self.n):
-                        self.grid[i][j].set_letter(random_letters[j])
-                        column_list_letters[j].append(random_letters[j])
-                    break
-                else:
-                    random_letters.rotate(1)
-            while True:
-                if random_numbers[0] not in column_list_numbers[0]:
-                    for j in range(self.n):
-                        # try:
-                        # self.grid[self.n*i+j].set_number(random_numbers[j])
-                        # column_list_numbers[j].append(random_numbers[j])
-                        # except ValueEqualityError:
-                        # random_numbers.rotate(1)
-                        self.grid[i][j].set_number(random_numbers[j])
-                        column_list_numbers[j].append(random_numbers[j])
-                    if 1 != self.count(self.grid[i][j]):
-                        random_numbers.rotate(1)
-                        for sublist in column_list_numbers:
-                            del sublist[i]
-                        continue
-                    break
-                else:
-                    random_numbers.rotate(1)
-
-    def make_square_conditions(self):
-        # this function works for n=3 and n=4, but doesn't work for n=5
-        column_list_letters = [[] for i in range(self.n)]
-        column_list_numbers = [[] for i in range(self.n)]
-        row_list_letters = [[] for i in range(self.n)]
-        row_list_numbers = [[] for i in range(self.n)]
-        for i in range(self.n):
-            letters = self.letters.copy()
-            numbers = self.numbers.copy()
-            while True:
-                for j in range(self.n):
-                    for letter in letters:
-                        if letter not in column_list_letters[j]:
-                            self.grid[self.n*i+j].set_letter(letter)
-                            column_list_letters[j].append(letter)
-                            row_list_letters[i].append(letter)
-                            letters.remove(letter)
-                            break
-                if len(row_list_letters[i]) < self.n:
-                    letters = deque(self.letters.copy())
-                    letters.rotate(-(self.n-1))
-                    row_list_letters[i].clear()
-                    for sublist in column_list_letters:
-                        try:
-                            del sublist[i]
-                        except IndexError:
-                            pass
-                else:
-                    break
-            while True:
-                for j in range(self.n):
-                    for number in numbers:
-                        if number not in column_list_numbers[j]:
-                            self.grid[self.n*i+j].set_number(number)
-                            if 1 != self.grid.count(self.grid[self.n*i+j]):
-                                continue
-                            column_list_numbers[j].append(number)
-                            row_list_numbers[i].append(number)
-                            numbers.remove(number)
-                            break
-                if len(row_list_numbers[i]) < self.n:
-                    numbers = deque(self.numbers.copy())
-                    numbers.rotate(-(self.n-1))
-                    # numbers = numbers[-1:] + numbers[:-1]
-                    row_list_numbers[i].clear()
-                    for sublist in column_list_numbers:
-                        try:
-                            del sublist[i]
-                        except IndexError:
-                            pass
-                else:
-                    break
 
     def is_valid(self):
         for i in range(self.n):
@@ -176,14 +83,148 @@ class EulerSquare(Grid):
                     if 1 != self.count(self.grid[i][j]):
                         return False
         return True
+                
+    def generate_square(self):
+        if self.n % 2 == 1:
+            self.generate_odd_square()
+        elif self.n % 2 == 0 and self.n != 0:
+            self.generate_even_square()
+        else:
+            print("Input needs to be a positive integer.")
+                    
+    def generate_odd_square(self):
+        # shorter version for odd squares
+        letters, numbers = self.shuffle_elements()
+        letters = deque(letters)
+        numbers = deque(numbers)
+        for i in range(self.n):
+            letters.rotate(1)
+            numbers.rotate(2)
+            for j in range(self.n):
+                self.grid[self.n*i+j].set_letter(letters[j])
+                self.grid[self.n*i+j].set_number(numbers[j])
+                
+    def generate_even_square(self):
+        if self.n % 8 == 0:
+            self.eight_by_eight_square()
+        elif self.n % 4 == 0:
+            self.four_by_four_square()
+        elif self.n == 6:
+            print("Sorry, no known solution for n=6.")
+        else:
+            print("Sorry, no solution yet for multiples of 2.")    # needs to be fixed
+        
+    def swap_positions_v1(self, row): 
+        row[0], row[1], row[2], row[3] = row[2], row[3], row[0], row[1] 
+        return row
+        
+    def swap_positions_v2(self, row): 
+        row[0], row[1], row[2], row[3] = row[1], row[0], row[3], row[2] 
+        return row
+        
+    def swap_rows(self, index_row_1, index_row_2):
+        for i in range(self.n):
+            # self.grid[self.n*index_row_2+i].set_number(), self.grid[self.n*index_row_1+i].set_number() \
+            # = self.grid[self.n*index_row_1+i].get_number(), self.grid[self.n*index_row_2+i].get_number()
+            temp_number_1 = self.grid[self.n*index_row_1+i].get_number()
+            temp_number_2 = self.grid[self.n*index_row_2+i].get_number()
+            self.grid[self.n*index_row_2+i].set_number() = temp_number_1
+            self.grid[self.n*index_row_1+i].set_number() = temp_number_2
+                
+    # def four_by_four_square(self):   # n = 4
+        # letters, numbers = self.shuffle_elements()
+        # row_list_letters = [[] for i in range(self.n)]
+        # row_list_numbers = [[] for i in range(self.n)]
+        # row_list_letters[0] = letters.copy()
+        # row_list_letters[1] = self.swap_positions_v1(letters.copy())
+        # row_list_letters[2] = self.swap_positions_v2(letters.copy())
+        # row_list_letters[3] = self.swap_positions_v2(self.swap_positions_v1(letters.copy()))
+        # row_list_numbers[0] = numbers.copy()
+        # row_list_numbers[1] = self.swap_positions_v2(numbers.copy())
+        # row_list_numbers[2] = self.swap_positions_v2(self.swap_positions_v1(numbers.copy()))
+        # row_list_numbers[3] = self.swap_positions_v1(numbers.copy())
+        # for i in range(self.n):
+            # for j in range(self.n):
+                # self.grid[self.n*i+j].set_letter(row_list_letters[i][j])
+                # self.grid[self.n*i+j].set_number(row_list_numbers[i][j])
+                
+    def four_by_four_square(self, letters, numbers, quad_row=0, quad_col=0):   # n = 4
+        if self.n == 4:
+            letters, numbers = self.shuffle_elements()
+            letters = deque(letters)
+            numbers = deque(numbers)
+        letters = deque(itertools.islice(letters, 4*quad_col, 4*quad_col+4))
+        numbers = deque(itertools.islice(numbers, 4*quad_col, 4*quad_col+4))
+        # letters = letters[4*quad_col : 4*quad_col+4]
+        # numbers = numbers[4*quad_col : 4*quad_col+4]
+        row_list_letters = []
+        row_list_numbers = []
+        row_list_letters.append(letters)
+        row_list_letters.append(self.swap_positions_v1(letters.copy()))
+        row_list_letters.append(self.swap_positions_v2(letters.copy()))
+        row_list_letters.append(self.swap_positions_v2(self.swap_positions_v1(letters.copy())))
+        row_list_numbers.append(numbers)
+        row_list_numbers.append(self.swap_positions_v2(numbers.copy()))
+        row_list_numbers.append(self.swap_positions_v2(self.swap_positions_v1(numbers.copy())))
+        row_list_numbers.append(self.swap_positions_v1(numbers.copy()))
+        # print(row_list_letters)
+        # print(row_list_numbers)
+        for i in range(4):
+            for j in range(4):
+                # print(self.n*(4*quad_row+i)+4*quad_col+j)
+                self.grid[self.n*(4*quad_row+i)+4*quad_col+j].set_letter(row_list_letters[i][j])
+                self.grid[self.n*(4*quad_row+i)+4*quad_col+j].set_number(row_list_numbers[i][j])
+                     
+    def eight_by_eight_square(self):   # n = 8
+        letters, numbers = self.shuffle_elements()
+        # batches_letters = [letters[4*i : 4*i+4] for i in range(0, self.n/4]
+        # batches_numbers = [numbers[4*i : 4*i+4] for i in range(0, self.n/4]
+        # for batch in batches_letters:
+        letters = deque(letters)
+        numbers = deque(numbers)
+        for i in range(0, self.n//4):
+            for j in range(0, self.n//4):
+                # batch_letters = letters[4*i : 4*i+4]
+                # batch_numbers = numbers[4*i : 4*i+4]
+                # batch_letters = deque(itertools.islice(letters, 4*i, 4*i+4))
+                # batch_numbers = deque(itertools.islice(numbers, 4*i, 4*i+4))
+                self.four_by_four_square(letters, numbers, quad_row=i, quad_col=j)
+            letters.rotate(4)
+            # numbers.rotate(8)
+        self.swap_rows(4, 5)
+        self.swap_rows(6, 7)
+        
+                
+    def multiples_of_four_odd(self):   # n = 12, 20, 28, 36, 44, ...
+        pass
+        
+    def multiples_of_eight_odd(self):   # n = 24, 40, 56, 72, ...
+        pass
+        
+    def multiples_of_sixteen(self):   # n = 16, 48, 80, ...
+        pass                            # use recursion ?
+        
+    def multiples_of_thirty_two(self):   # n = 32, 64, ...
+        pass
 
+      
+new_square = EulerSquare(8)
 
-# new_square = EulerSquare(5)
+new_square.generate_square()
+if new_square.is_valid():
+    print("Found it!\n")
+    new_square.print_grid()
+else:
+    # if self.n == 6:
+        # pass
+    # else:
+    print("Fix code!\n")
+    new_square.print_grid()
+    
+# while True:
+    # new_square.generate_random_square()
+    # if new_square.is_valid():
+        # print("found it!")
+        # new_square.print_grid()
+        # break
 
-# new_square.make_odd_square_conditions()
-# if new_square.is_valid():
-#     print("Found it!")
-#     print(new_square)
-# else:
-#     print("Fix code!")
-#     print(new_square)
